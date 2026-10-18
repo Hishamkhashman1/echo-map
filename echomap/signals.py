@@ -3,6 +3,9 @@ from __future__ import annotations
 import numpy as np
 
 
+PROBE_PHASE_CODE = np.asarray([1, 1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1], dtype=np.float64)
+
+
 def linear_chirp(sample_rate: int, duration: float, start_hz: float, end_hz: float) -> np.ndarray:
     samples = max(1, int(round(sample_rate * duration)))
     time = np.arange(samples, dtype=np.float64) / sample_rate
@@ -12,4 +15,7 @@ def linear_chirp(sample_rate: int, duration: float, start_hz: float, end_hz: flo
 
 
 def make_burst(sample_rate: int, duration: float, start_hz: float, end_hz: float, level: float) -> np.ndarray:
-    return np.clip(linear_chirp(sample_rate, duration, start_hz, end_hz) * level, -0.99, 0.99)
+    chirp = linear_chirp(sample_rate, duration, start_hz, end_hz).astype(np.float64)
+    chip_indices = np.minimum((np.arange(len(chirp)) * len(PROBE_PHASE_CODE) // len(chirp)), len(PROBE_PHASE_CODE) - 1)
+    coded_chirp = chirp * PROBE_PHASE_CODE[chip_indices]
+    return np.clip(coded_chirp * level, -0.99, 0.99).astype(np.float32)

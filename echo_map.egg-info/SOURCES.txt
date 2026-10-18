@@ -9,10 +9,13 @@ echo_map.egg-info/top_level.txt
 echomap/__init__.py
 echomap/audio.py
 echomap/cli.py
+echomap/constraints.py
+echomap/diagnostics.py
 echomap/features.py
 echomap/geometry.py
 echomap/model.py
 echomap/processing.py
+echomap/room_inference.py
 echomap/signals.py
 echomap/simulation.py
 echomap/tk_app.py

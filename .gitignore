@@ -4,3 +4,4 @@ __pycache__/
 *.pyo
 training-examples.json
 echo-model.pkl
+diagnostics/

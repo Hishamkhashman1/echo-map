@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import threading
+import time
 from typing import Callable
 
 import numpy as np
@@ -10,7 +11,7 @@ import numpy as np
 @dataclass
 class AudioConfig:
     sample_rate: int = 48000
-    chirp_duration: float = 0.08
+    chirp_duration: float = 0.03
     repetition_interval: float = 0.5
     start_hz: float = 800.0
     end_hz: float = 8000.0
@@ -20,6 +21,16 @@ class AudioConfig:
     output_channel: int = 0
     input_device: int | None = None
     output_device: int | None = None
+    sound_speed: float = 340.0
+    microphone_offset: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    microphone_offset_known: bool = False
+    view_half_extent_m: float = 5.0
+
+    def __post_init__(self) -> None:
+        if self.chirp_duration <= 0 or self.repetition_interval <= self.chirp_duration:
+            raise ValueError("Repetition interval must be longer than chirp duration.")
+        if self.capture_seconds <= 0 or self.capture_seconds >= self.repetition_interval:
+            raise ValueError("Capture window must be shorter than the repetition interval so it contains one chirp.")
 
 
 def list_devices() -> list[dict]:
@@ -61,8 +72,6 @@ class AudioEngine:
         self._lock = threading.Lock()
         self._play_index = 0
         self._cycle_index = 0
-        self._recorded: list[np.ndarray] = []
-        self._metadata: list[dict] = []
 
     def start(self) -> None:
         try:
@@ -88,16 +97,19 @@ class AudioEngine:
         output_data.fill(0)
         with self._lock:
             period = max(len(self.burst) + 1, int(self.config.repetition_interval * self.config.sample_rate))
+            cycle_position = self._cycle_index % period
+            probe_index = self._cycle_index // period
+            remaining_to_probe = period - cycle_position
+            probe_start_offset = 0 if cycle_position == 0 else (remaining_to_probe if remaining_to_probe < frames else None)
             for frame in range(frames):
                 phase = self._cycle_index % period
                 if phase < len(self.burst):
                     output_data[frame, self.config.output_channel] = self.burst[phase]
                 self._cycle_index += 1
         recorded = np.asarray(input_data[:, self.config.input_channel], dtype=np.float32).copy()
-        self._recorded.append(recorded)
-        self._metadata.append({"status": str(status), "input_peak": float(np.max(np.abs(recorded), initial=0.0))})
+        metadata = {"status": str(status), "timestamp": time.time(), "input_peak": float(np.max(np.abs(recorded), initial=0.0)), "input_rms": float(np.sqrt(np.mean(recorded**2))) if len(recorded) else 0.0, "output_block": output_data[:, self.config.output_channel].copy(), "probe_index": int(probe_index), "probe_start_offset": probe_start_offset, "next_probe_index": int(probe_index + 1) if probe_start_offset is not None else None, "probe_period_samples": int(period)}
         if self.callback:
-            self.callback(recorded, self._metadata[-1])
+            self.callback(recorded, metadata)
 
     def stop(self) -> None:
         self._stop.set()

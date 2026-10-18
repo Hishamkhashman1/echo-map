@@ -10,7 +10,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 from sklearn.preprocessing import StandardScaler
 
-from .features import FEATURE_SCHEMA
+from .features import FEATURE_SCHEMA, SEQUENCE_FEATURE_SCHEMA
 
 
 @dataclass
@@ -38,10 +38,11 @@ class PresenceModel:
         test = [item for item in examples if item.session == holdout_session]
         if len({item.label for item in train}) < 2:
             raise ValueError("The training-session split must contain at least two labels")
+        feature_schema = SEQUENCE_FEATURE_SCHEMA if len(train[0].features) == len(SEQUENCE_FEATURE_SCHEMA) else FEATURE_SCHEMA
         x_train = self.scaler.fit_transform([item.features for item in train])
         self.classifier.fit(x_train, [item.label for item in train])
         self.labels = list(self.classifier.classes_)
-        self.settings = {"feature_schema": FEATURE_SCHEMA, **(settings or {})}
+        self.settings = {"feature_schema": feature_schema, **(settings or {})}
         if test:
             predicted = self.classifier.predict(self.scaler.transform([item.features for item in test]))
             truth = [item.label for item in test]

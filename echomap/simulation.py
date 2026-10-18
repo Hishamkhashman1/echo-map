@@ -12,6 +12,7 @@ def synthetic_recording(reference: np.ndarray, sample_rate: int, delays_s=(0.012
         result[index : index + len(reference)] += gain * reference
     if movement:
         index = int(round((delays_s[-1] + movement) * sample_rate))
-        result[index : index + len(reference)] += gains[-1] * 0.7 * reference
+        end = min(length, index + len(reference))
+        result[index:end] += gains[-1] * 0.7 * reference[: end - index]
     result += rng.normal(0.0, noise, length)
     return result.astype(np.float32)

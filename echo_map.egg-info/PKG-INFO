@@ -8,3 +8,5 @@ Requires-Dist: scipy>=1.10
 Requires-Dist: scikit-learn>=1.2
 Requires-Dist: matplotlib>=3.7
 Requires-Dist: sounddevice>=0.4.6
+Provides-Extra: room
+Requires-Dist: pyroomacoustics>=0.7; extra == "room"
