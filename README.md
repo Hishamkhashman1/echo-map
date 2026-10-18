@@ -17,6 +17,16 @@ python -m pip install -e .
 
 ## Run
 
+The easiest way to use the application is the Tkinter control window:
+
+```bash
+echo-map
+```
+
+It discovers input/output devices, checks that the selected microphone and speaker support the chosen sample rate, edits the core chirp settings, and starts/stops live sensing. The Matplotlib view shows the live echo heatmap and an explicitly experimental room estimate. It still uses `B` for baseline and `Q` to stop.
+
+The same window can be opened explicitly with `echo-map --gui`.
+
 Try the software without audio hardware first:
 
 ```bash

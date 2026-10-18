@@ -38,6 +38,19 @@ def device_report() -> str:
     return "\n".join(lines)
 
 
+def validate_devices(input_device: int, output_device: int, sample_rate: int, input_channel: int = 0, output_channel: int = 0) -> str:
+    try:
+        import sounddevice as sd
+        sd.check_input_settings(device=input_device, samplerate=sample_rate, channels=input_channel + 1)
+        sd.check_output_settings(device=output_device, samplerate=sample_rate, channels=output_channel + 1)
+    except Exception as exc:
+        raise ValueError(f"Selected devices do not support this configuration: {exc}") from exc
+    devices = list_devices()
+    input_name = devices[input_device]["name"]
+    output_name = devices[output_device]["name"]
+    return f"Confirmed microphone: {input_name}\nConfirmed speaker: {output_name}\nSample rate: {sample_rate} Hz"
+
+
 class AudioEngine:
     def __init__(self, config: AudioConfig, burst: np.ndarray, callback: Callable[[np.ndarray, dict], None]):
         self.config = config

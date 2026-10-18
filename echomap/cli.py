@@ -16,6 +16,8 @@ from .ui import LiveView
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description="Stationary single-speaker/single-microphone acoustic sensing experiment")
+    result.add_argument("--gui", action="store_true", help="open the Tkinter control window")
+    result.add_argument("--headless", action="store_true", help=argparse.SUPPRESS)
     result.add_argument("--simulate", action="store_true", help="run with synthetic echoes and no audio hardware")
     result.add_argument("--list-devices", action="store_true")
     result.add_argument("--input-device", type=int)
@@ -45,6 +47,10 @@ def run_training(path: str, model_path: str = "echo-model.pkl") -> None:
 
 def main(argv=None) -> None:
     args = parser().parse_args(argv)
+    if args.gui or (argv is None and not any(option.startswith("--") for option in __import__("sys").argv[1:])):
+        from .tk_app import launch
+        launch()
+        return
     if args.list_devices:
         print(device_report())
         print("Supported rates:", query_supported_rates(args.input_device))
